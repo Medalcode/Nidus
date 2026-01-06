@@ -1,0 +1,68 @@
+:root {
+  --font-main: "Outfit", system-ui, sans-serif;
+  --bg-color: #0f1014;
+  --surface-color: #1b1c21;
+  --surface-hover: #26272e;
+  --primary-color: #8b5cf6;
+  --primary-glow: rgba(139, 92, 246, 0.5);
+  --secondary-color: #ec4899;
+  --text-main: #f4f4f5;
+  --text-secondary: #a1a1aa;
+
+  font-family: var(--font-main);
+  line-height: 1.6;
+  font-weight: 300;
+
+  color-scheme: dark;
+  color: var(--text-main);
+  background-color: var(--bg-color);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  min-height: 100vh;
+  width: 100%;
+  overflow-x: hidden;
+  background: radial-gradient(
+    circle at 50% 0%,
+    #2a1b4e 0%,
+    var(--bg-color) 60%
+  );
+}
+
+h1,
+h2,
+h3,
+h4,
+h5 {
+  font-weight: 600;
+  line-height: 1.2;
+  color: #fff;
+}
+
+a {
+  color: var(--primary-color);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+a:hover {
+  color: var(--secondary-color);
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
