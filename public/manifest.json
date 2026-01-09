@@ -1,0 +1,49 @@
+{
+  "name": "Nidius Suite - Job Search with AI",
+  "short_name": "Nidius",
+  "description": "Open Source platform to revolutionize your job search with AI. Kanban board, CV optimizer, interview simulator and analytics.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#6366f1",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "business", "utilities"],
+  "screenshots": [
+    {
+      "src": "/screenshot1.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Kanban Board",
+      "short_name": "Board",
+      "description": "Open job applications board",
+      "url": "/?view=board",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "CV Optimizer",
+      "short_name": "CV",
+      "description": "Optimize your resume with AI",
+      "url": "/?view=optimizer",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

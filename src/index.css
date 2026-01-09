@@ -1,5 +1,9 @@
 :root {
-  --font-main: "Outfit", system-ui, sans-serif;
+  --font-main: 'Outfit', system-ui, sans-serif;
+}
+
+/* Dark theme (default) */
+[data-theme='dark'] {
   --bg-color: #0f1014;
   --surface-color: #1b1c21;
   --surface-hover: #26272e;
@@ -8,12 +12,33 @@
   --secondary-color: #ec4899;
   --text-main: #f4f4f5;
   --text-secondary: #a1a1aa;
+  --border-color: rgba(255, 255, 255, 0.1);
+  --glass-bg: rgba(27, 28, 33, 0.6);
+  --shadow-color: rgba(0, 0, 0, 0.5);
+  color-scheme: dark;
+}
 
+/* Light theme */
+[data-theme='light'] {
+  --bg-color: #f8fafc;
+  --surface-color: #ffffff;
+  --surface-hover: #f1f5f9;
+  --primary-color: #6366f1;
+  --primary-glow: rgba(99, 102, 241, 0.3);
+  --secondary-color: #ec4899;
+  --text-main: #0f172a;
+  --text-secondary: #64748b;
+  --border-color: rgba(0, 0, 0, 0.1);
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  --shadow-color: rgba(0, 0, 0, 0.1);
+  color-scheme: light;
+}
+
+:root {
   font-family: var(--font-main);
   line-height: 1.6;
   font-weight: 300;
 
-  color-scheme: dark;
   color: var(--text-main);
   background-color: var(--bg-color);
 
@@ -21,6 +46,8 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 * {
@@ -33,11 +60,16 @@ body {
   min-height: 100vh;
   width: 100%;
   overflow-x: hidden;
-  background: radial-gradient(
-    circle at 50% 0%,
-    #2a1b4e 0%,
-    var(--bg-color) 60%
-  );
+  background: var(--bg-color);
+  transition: background 0.3s ease;
+}
+
+[data-theme='dark'] body {
+  background: radial-gradient(circle at 50% 0%, #2a1b4e 0%, var(--bg-color) 60%);
+}
+
+[data-theme='light'] body {
+  background: radial-gradient(circle at 50% 0%, #e0e7ff 0%, var(--bg-color) 60%);
 }
 
 h1,

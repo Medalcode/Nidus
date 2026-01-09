@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, ArrowRight, ArrowLeft, Building2, Calendar, Download, RefreshCw, Wand2, Settings } from 'lucide-react';
+import { Plus, Trash2, ArrowRight, ArrowLeft, Building2, Calendar, Download, RefreshCw, Wand2, Settings, UploadCloud } from 'lucide-react';
 import ProfileSettings from './ProfileSettings';
 import CoverLetterGenerator from './CoverLetterGenerator';
 import '../App.css';
@@ -31,11 +31,52 @@ export default function JobBoard() {
     window.dispatchEvent(new Event('jobs-updated'));
   }, [jobs]);
 
+  const exportData = () => {
+    try {
+      const dataStr = JSON.stringify(jobs, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `nidius-jobs-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error exporting data:', error);
+      alert('Error al exportar datos.');
+    }
+  };
+
+  const importData = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const importedJobs = JSON.parse(e.target.result);
+        if (Array.isArray(importedJobs)) {
+          setJobs(importedJobs);
+          alert(`¡Se importaron ${importedJobs.length} empleos!`);
+        } else {
+          alert('Formato de archivo inválido.');
+        }
+      } catch (error) {
+        console.error('Error parsing imported data:', error);
+        alert('Error al leer el archivo. Asegúrate de que sea un JSON válido.');
+      }
+    };
+    reader.readAsText(file);
+  };
+
   const fetchScrapedJobs = async () => {
     setLoading(true);
     try {
-      // Use relative path for API (works both local proxy and prod)
-      const response = await fetch(`/api/scrape?term=react`); 
+      const response = await fetch(`/api/scrape?term=react`, {
+        signal: AbortSignal.timeout(15000)
+      }); 
       if (!response.ok) throw new Error('Error al conectar con el servidor de scraping.');
       
       const scrapedData = await response.json();
@@ -56,7 +97,11 @@ export default function JobBoard() {
       }
     } catch (error) {
       console.error('Error importing jobs:', error);
-      alert('Error al importar. Asegúrate de haber ejecutado el scraper.');
+      if (error.name === 'TimeoutError') {
+        alert('El servidor tardó demasiado en responder. Intenta de nuevo.');
+      } else {
+        alert('Error al importar. Asegúrate de que el servidor esté ejecutándose.');
+      }
     } finally {
       setLoading(false);
     }
@@ -106,14 +151,13 @@ export default function JobBoard() {
   };
 
   const deleteJob = (id) => {
-    if (window.confirm('¿Estás seguro de que quieres eliminar este empleo?')) { // Updated confirmation message
+    if (window.confirm('¿Estás seguro de que quieres eliminar este empleo?')) {
       setJobs(jobs.filter(job => job.id !== id));
     }
   };
 
-  const openAiModal = (job) => { // New function for AI modal
-    setSelectedJob(job);
-    setShowAiModal(true);
+  const openAiModal = (job) => {
+    setSelectedJobForLetter(job);
   };
 
   return (
@@ -123,23 +167,47 @@ export default function JobBoard() {
           <h2>Tablero de Postulaciones</h2>
           <span className="job-count">{jobs.length} Empleos Rastreados</span> {/* New text */}
         </div>
-        <div className="header-actions"> {/* New div */}
+        <div className="header-actions">
            <button 
-            className="btn-icon" // Changed class
+            className="btn-icon"
             onClick={() => setShowSettings(true)}
-            title="Configuración" // Updated title
+            title="Configuración"
+            aria-label="Abrir configuración"
           >
-            <Settings size={20} /> {/* Changed icon size */}
+            <Settings size={20} />
           </button>
+          <button 
+            className="btn-icon" 
+            onClick={exportData}
+            title="Exportar datos"
+            aria-label="Exportar datos a JSON"
+          >
+            <Download size={20} />
+          </button>
+          <label className="btn-icon" title="Importar datos" style={{ cursor: 'pointer' }}>
+            <input 
+              type="file" 
+              accept=".json" 
+              onChange={importData} 
+              style={{ display: 'none' }} 
+              aria-label="Importar datos desde JSON"
+            />
+            <UploadCloud size={20} />
+          </label>
           <button 
             className="btn-secondary" 
             onClick={fetchScrapedJobs}
             disabled={loading}
+            aria-label="Importar ofertas desde API"
           >
-            {loading ? <RefreshCw className="spin" size={18} /> : <Download size={18} />} Importar Ofertas {/* Added text */}
+            {loading ? <RefreshCw className="spin" size={18} /> : <RefreshCw size={18} />} Scraper
           </button>
-          <button className="btn-primary" onClick={() => setIsAdding(!isAdding)}>
-            <Plus size={18} /> Nuevo empleo {/* Updated text */}
+          <button 
+            className="btn-primary" 
+            onClick={() => setIsAdding(!isAdding)}
+            aria-label="Añadir nuevo empleo"
+          >
+            <Plus size={18} /> Nuevo empleo
           </button>
         </div>
       </header>

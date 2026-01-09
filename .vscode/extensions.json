@@ -1,0 +1,11 @@
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "bradlc.vscode-tailwindcss",
+    "christian-kohler.path-intellisense",
+    "ms-vscode.vscode-typescript-next"
+  ]
+}

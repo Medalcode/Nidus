@@ -24,7 +24,7 @@ async def scrape_jobs(term: str = "react"):
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
         }
         
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, timeout=10)
         response.raise_for_status()
         data = response.json()
         
@@ -47,7 +47,7 @@ async def scrape_jobs(term: str = "react"):
         
     except Exception as e:
         print(f"Error scraping: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 # Mount static files (React build)
 # We assume the build will be in 'dist' directory next to this file or parent
