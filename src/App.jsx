@@ -1,4 +1,3 @@
-<<<<<<< Updated upstream
 import { useState, useEffect } from 'react';
 import {
   FileText,
@@ -11,6 +10,11 @@ import {
   BarChart3,
   ScanFace,
   MessageSquare,
+  LogOut,
+  User,
+  Upload,
+  UserCheck,
+  CheckSquare,
 } from 'lucide-react';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
@@ -18,7 +22,12 @@ import JobBoard from './components/JobBoard';
 import Analytics from './components/Analytics';
 import CVOptimizer from './components/CVOptimizer';
 import InterviewSimulator from './components/InterviewSimulator';
+import CVUpload from './components/CVUpload';
+import ProfileGenerator from './components/ProfileGenerator';
+import ApprovalQueue from './components/ApprovalQueue';
+import Auth from './components/Auth';
 import ThemeToggle from './components/ThemeToggle';
+import api from './utils/api';
 import './App.css';
 import './components/JobBoard.css';
 import './components/Analytics.css';
@@ -28,153 +37,151 @@ import './components/InterviewSimulator.css';
 function AppContent() {
   const { t } = useLanguage();
   const [currentView, setCurrentView] = useState('home');
+  const [showAuth, setShowAuth] = useState(false);
+  const [user, setUser] = useState(null);
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  const [cvData, setCvData] = useState(null);
+  const [profiles, setProfiles] = useState([]);
 
-  // Load jobs here to pass to Analytics and Simulator
-  const [jobs, setJobs] = useState(() => {
-    const saved = localStorage.getItem('openhire_jobs');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-=======
-import { useState, useEffect } from 'react'
-import { FileText, Bot, Layout, Home, ExternalLink, Terminal, ArrowRight, BarChart3, ScanFace, MessageSquare, HelpCircle, X, LogOut, User } from 'lucide-react'
-import JobBoard from './components/JobBoard'
-import Analytics from './components/Analytics'
-import CVOptimizer from './components/CVOptimizer'
-import InterviewSimulator from './components/InterviewSimulator'
-import JobAutomation from './components/JobAutomation'
-import Auth from './components/Auth'
-import api from './utils/api'
-import './App.css'
-import './components/JobBoard.css'
-import './components/Analytics.css'
-import './components/CVOptimizer.css'
-import './components/InterviewSimulator.css'
-
-function App() {
-  const [currentView, setCurrentView] = useState('home')
-  const [showGuide, setShowGuide] = useState(false)
-  const [showAuth, setShowAuth] = useState(false)
-  const [user, setUser] = useState(null)
-  const [isLoadingAuth, setIsLoadingAuth] = useState(true)
-  
   // Load jobs here to pass to Analytics and Simulator
   const [jobs, setJobs] = useState([]);
-  
+
   // Check authentication on mount
   useEffect(() => {
     const checkAuth = async () => {
       if (api.isAuthenticated()) {
         try {
-          const userData = await api.auth.getMe()
-          setUser(userData)
+          const userData = await api.auth.getMe();
+          setUser(userData);
           // Load jobs from backend
-          const jobsData = await api.jobs.getAll()
-          setJobs(jobsData)
+          const jobsData = await api.jobs.getAll();
+          setJobs(jobsData);
         } catch (error) {
-          console.error('Auth check failed:', error)
+          console.error('Auth check failed:', error);
           // Fallback to localStorage
-          const cachedJobs = localStorage.getItem('openhire_jobs')
+          const cachedJobs = localStorage.getItem('openhire_jobs');
           if (cachedJobs) {
-            setJobs(JSON.parse(cachedJobs))
+            setJobs(JSON.parse(cachedJobs));
           }
         }
       } else {
         // Load from localStorage if not authenticated
-        const cachedJobs = localStorage.getItem('openhire_jobs')
+        const cachedJobs = localStorage.getItem('openhire_jobs');
         if (cachedJobs) {
-          setJobs(JSON.parse(cachedJobs))
+          setJobs(JSON.parse(cachedJobs));
         }
       }
-      setIsLoadingAuth(false)
-    }
-    
-    checkAuth()
-    
+      setIsLoadingAuth(false);
+    };
+
+    checkAuth();
+
     // Listen for auth events
     const handleAuthExpired = () => {
-      setUser(null)
-      setShowAuth(true)
-    }
-    
+      setUser(null);
+      setShowAuth(true);
+    };
+
     const handleAuthLogout = () => {
-      setUser(null)
-      setJobs([])
-      setCurrentView('home')
-    }
-    
-    window.addEventListener('auth-expired', handleAuthExpired)
-    window.addEventListener('auth-logout', handleAuthLogout)
-    
+      setUser(null);
+      setJobs([]);
+      setCvData(null);
+      setProfiles([]);
+      setCurrentView('home');
+    };
+
+    window.addEventListener('auth-expired', handleAuthExpired);
+    window.addEventListener('auth-logout', handleAuthLogout);
+
     return () => {
-      window.removeEventListener('auth-expired', handleAuthExpired)
-      window.removeEventListener('auth-logout', handleAuthLogout)
-    }
-  }, [])
-  
->>>>>>> Stashed changes
+      window.removeEventListener('auth-expired', handleAuthExpired);
+      window.removeEventListener('auth-logout', handleAuthLogout);
+    };
+  }, []);
+
   // Listen for storage updates to keep Analytics in sync if JobBoard updates jobs
   useEffect(() => {
-    const handleStorageChange = () => {
-      const saved = localStorage.getItem('openhire_jobs');
-      if (saved) setJobs(JSON.parse(saved));
-    };
-<<<<<<< Updated upstream
-
-=======
-    
     const handleJobsUpdated = async () => {
       // Reload from backend if authenticated
       if (api.isAuthenticated()) {
         try {
-          const jobsData = await api.jobs.getAll()
-          setJobs(jobsData)
+          const jobsData = await api.jobs.getAll();
+          setJobs(jobsData);
         } catch (error) {
-          console.error('Error reloading jobs:', error)
-          handleStorageChange()
+          console.error('Error reloading jobs:', error);
+          const saved = localStorage.getItem('openhire_jobs');
+          if (saved) setJobs(JSON.parse(saved));
         }
       } else {
-        handleStorageChange()
+        const saved = localStorage.getItem('openhire_jobs');
+        if (saved) setJobs(JSON.parse(saved));
       }
     };
-    
->>>>>>> Stashed changes
+
     // Custom event listener for local updates within same window
     window.addEventListener('jobs-updated', handleJobsUpdated);
     return () => window.removeEventListener('jobs-updated', handleJobsUpdated);
   }, []);
-  
-  const handleAuthSuccess = async (userData) => {
-    setUser(userData)
-    setShowAuth(false)
-    
+
+  const handleAuthSuccess = async userData => {
+    setUser(userData);
+    setShowAuth(false);
+
     // Load jobs after login
     try {
-      const jobsData = await api.jobs.getAll()
-      setJobs(jobsData)
-      
+      const jobsData = await api.jobs.getAll();
+      setJobs(jobsData);
+
       // Optionally migrate localStorage jobs to backend
-      const cachedJobs = localStorage.getItem('openhire_jobs')
+      const cachedJobs = localStorage.getItem('openhire_jobs');
       if (cachedJobs) {
-        const localJobs = JSON.parse(cachedJobs)
+        const localJobs = JSON.parse(cachedJobs);
         // If user has local jobs but no backend jobs, offer migration
         if (localJobs.length > 0 && jobsData.length === 0) {
           // Could show a migration prompt here
-          console.log('Found local jobs, consider migrating to backend')
+          console.log('Found local jobs, consider migrating to backend');
         }
       }
     } catch (error) {
-      console.error('Error loading jobs:', error)
+      console.error('Error loading jobs:', error);
     }
-  }
-  
+  };
+
   const handleLogout = () => {
     if (confirm('¿Seguro que quieres cerrar sesión?')) {
-      api.auth.logout()
+      api.auth.logout();
     }
-  }
+  };
+
+  const handleCVUpload = extractedData => {
+    setCvData(extractedData);
+    setCurrentView('profile-generator');
+  };
+
+  const handleProfilesGenerated = generatedProfiles => {
+    setProfiles(generatedProfiles);
+    setCurrentView('approval-queue');
+  };
 
   const tools = [
+    {
+      id: 'cv-automation',
+      title: 'CV Automation (Nuevo)',
+      icon: <Upload size={24} />,
+      tag: 'Sistema Automático',
+      description:
+        'Sube tu CV, genera 3 perfiles optimizados con IA, y automatiza postulaciones inteligentes.',
+      action: () => {
+        if (!user) {
+          setShowAuth(true);
+        } else {
+          setCurrentView('cv-upload');
+        }
+      },
+      actionLabel: 'Comenzar Workflow',
+      primary: true,
+      featured: true,
+    },
     {
       id: 'kanban',
       title: 'Tablero Kanban',
@@ -253,26 +260,25 @@ function App() {
         return (
           <>
             <header className="hero">
-<<<<<<< Updated upstream
               <div className="tag" style={{ marginBottom: '1rem' }}>
-                Nidius Suite
+                Nidus Suite
               </div>
-              <h1>{t('hero_title')}</h1>
-              <p>{t('hero_subtitle')}</p>
-=======
-              <div className="tag" style={{ marginBottom: '1rem' }}>Nidus Suite</div>
-              <h1>Consigue Trabajo.<br/>Sin Pagar de Más.</h1>
+              <h1>
+                Consigue Trabajo.
+                <br />
+                Sin Pagar de Más.
+              </h1>
               <p>
-                Reemplaza los SaaS de pago por herramientas Open Source. 
-                Optimiza tu perfil, usa IA avanzada y automatiza tu búsqueda.
+                Reemplaza los SaaS de pago por herramientas Open Source. Optimiza tu perfil, usa IA
+                avanzada y automatiza tu búsqueda.
               </p>
->>>>>>> Stashed changes
             </header>
 
             <div className="tools-grid">
               {tools.map(tool => (
-                <div key={tool.id} className="tool-card">
+                <div key={tool.id} className={`tool-card ${tool.featured ? 'featured' : ''}`}>
                   <div className="icon-wrapper">{tool.icon}</div>
+                  {tool.featured && <div className="featured-badge">✨ Nuevo</div>}
                   <h3>{tool.title}</h3>
                   <span className="tag">{tool.tag}</span>
                   <p>{tool.description}</p>
@@ -330,6 +336,12 @@ function App() {
         return <CVOptimizer />;
       case 'simulator':
         return <InterviewSimulator jobs={jobs} />;
+      case 'cv-upload':
+        return <CVUpload onUploadComplete={handleCVUpload} />;
+      case 'profile-generator':
+        return <ProfileGenerator cvData={cvData} onProfilesGenerated={handleProfilesGenerated} />;
+      case 'approval-queue':
+        return <ApprovalQueue />;
       default:
         return null;
     }
@@ -337,18 +349,25 @@ function App() {
 
   if (isLoadingAuth) {
     return (
-      <div className="app-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+      <div
+        className="app-container"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '100vh',
+        }}
+      >
         <div style={{ textAlign: 'center' }}>
           <div className="spinner" style={{ margin: '0 auto 1rem' }}></div>
           <p>Cargando...</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
     <div className="app-container">
-<<<<<<< Updated upstream
       <nav
         className="main-nav"
         style={{
@@ -358,21 +377,10 @@ function App() {
           padding: '1rem',
           borderBottom: '1px solid rgba(255,255,255,0.05)',
           marginBottom: '2rem',
+          position: 'relative',
         }}
       >
         <button
-=======
-      <nav className="main-nav" style={{ 
-        display: 'flex', 
-        gap: '2rem', 
-        justifyContent: 'center', 
-        padding: '1rem',
-        borderBottom: '1px solid rgba(255,255,255,0.05)',
-        marginBottom: '2rem',
-        position: 'relative'
-      }}>
-        <button 
->>>>>>> Stashed changes
           className={`nav-item ${currentView === 'home' ? 'active' : ''}`}
           onClick={() => setCurrentView('home')}
           style={{
@@ -387,8 +395,35 @@ function App() {
             fontWeight: currentView === 'home' ? 600 : 400,
           }}
         >
-          <Home size={18} /> {t('home')}
+          <Home size={18} /> Inicio
         </button>
+        {user && (
+          <button
+            className={`nav-item ${
+              ['cv-upload', 'profile-generator', 'approval-queue'].includes(currentView)
+                ? 'active'
+                : ''
+            }`}
+            onClick={() => setCurrentView('cv-upload')}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: ['cv-upload', 'profile-generator', 'approval-queue'].includes(currentView)
+                ? 'var(--primary-color)'
+                : 'var(--text-secondary)',
+              fontSize: '1.1rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              fontWeight: ['cv-upload', 'profile-generator', 'approval-queue'].includes(currentView)
+                ? 600
+                : 400,
+            }}
+          >
+            <Upload size={18} /> CV Auto
+          </button>
+        )}
         <button
           className={`nav-item ${currentView === 'board' ? 'active' : ''}`}
           onClick={() => setCurrentView('board')}
@@ -404,7 +439,7 @@ function App() {
             fontWeight: currentView === 'board' ? 600 : 400,
           }}
         >
-          <Layout size={18} /> {t('board')}
+          <Layout size={18} /> Tablero
         </button>
         <button
           className={`nav-item ${currentView === 'optimizer' ? 'active' : ''}`}
@@ -421,7 +456,7 @@ function App() {
             fontWeight: currentView === 'optimizer' ? 600 : 400,
           }}
         >
-          <ScanFace size={18} /> {t('optimizer')}
+          <ScanFace size={18} /> Optimizador
         </button>
         <button
           className={`nav-item ${currentView === 'simulator' ? 'active' : ''}`}
@@ -438,7 +473,7 @@ function App() {
             fontWeight: currentView === 'simulator' ? 600 : 400,
           }}
         >
-          <MessageSquare size={18} /> {t('simulator')}
+          <MessageSquare size={18} /> Simulador
         </button>
         <button
           className={`nav-item ${currentView === 'analytics' ? 'active' : ''}`}
@@ -455,21 +490,29 @@ function App() {
             fontWeight: currentView === 'analytics' ? 600 : 400,
           }}
         >
-          <BarChart3 size={18} /> {t('analytics')}
+          <BarChart3 size={18} /> Analíticas
         </button>
-        
+
         {/* Auth button - positioned absolutely at the right */}
-        <div style={{ position: 'absolute', right: '1rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+        <div
+          style={{
+            position: 'absolute',
+            right: '1rem',
+            display: 'flex',
+            gap: '0.5rem',
+            alignItems: 'center',
+          }}
+        >
           {user ? (
             <>
               <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
                 <User size={14} style={{ verticalAlign: 'middle', marginRight: '0.25rem' }} />
                 {user.email}
               </span>
-              <button 
+              <button
                 onClick={handleLogout}
-                style={{ 
-                  background: 'rgba(255,255,255,0.05)', 
+                style={{
+                  background: 'rgba(255,255,255,0.05)',
                   border: '1px solid rgba(255,255,255,0.1)',
                   borderRadius: '8px',
                   cursor: 'pointer',
@@ -478,19 +521,19 @@ function App() {
                   fontSize: '0.9rem',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.5rem'
+                  gap: '0.5rem',
                 }}
               >
                 <LogOut size={14} /> Salir
               </button>
             </>
           ) : (
-            <button 
+            <button
               onClick={() => setShowAuth(true)}
               className="btn-primary"
-              style={{ 
+              style={{
                 padding: '0.5rem 1rem',
-                fontSize: '0.9rem'
+                fontSize: '0.9rem',
               }}
             >
               <User size={14} style={{ marginRight: '0.25rem' }} /> Ingresar
@@ -502,14 +545,9 @@ function App() {
       <ThemeToggle />
 
       {renderView()}
-      
+
       {/* Auth Modal */}
-      {showAuth && (
-        <Auth 
-          onClose={() => setShowAuth(false)}
-          onAuthSuccess={handleAuthSuccess}
-        />
-      )}
+      {showAuth && <Auth onClose={() => setShowAuth(false)} onAuthSuccess={handleAuthSuccess} />}
     </div>
   );
 }
