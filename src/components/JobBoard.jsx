@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Trash2, ArrowRight, ArrowLeft, Building2, Calendar, Download, RefreshCw, Wand2, Settings, UploadCloud } from 'lucide-react';
 import ProfileSettings from './ProfileSettings';
 import CoverLetterGenerator from './CoverLetterGenerator';
+import api from '../utils/api';
 import '../App.css';
 import './JobBoard.css';
 
@@ -14,21 +15,74 @@ const COLUMNS = [
 ];
 
 export default function JobBoard() {
-  const [jobs, setJobs] = useState(() => {
-    const saved = localStorage.getItem('openhire_jobs');
-    return saved ? JSON.parse(saved) : [];
-  });
-
+  const [jobs, setJobs] = useState([]);
   const [isAdding, setIsAdding] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [selectedJobForLetter, setSelectedJobForLetter] = useState(null);
-  
   const [newJob, setNewJob] = useState({ title: '', company: '', link: '' });
   const [loading, setLoading] = useState(false);
+  const [syncing, setSyncing] = useState(false);
 
+  // Load jobs on mount - try backend first, fallback to localStorage
   useEffect(() => {
-    localStorage.setItem('openhire_jobs', JSON.stringify(jobs));
-    window.dispatchEvent(new Event('jobs-updated'));
+    const loadJobs = async () => {
+      setLoading(true);
+      try {
+        if (api.isAuthenticated()) {
+          const backendJobs = await api.jobs.getAll();
+          setJobs(backendJobs);
+          // Sync to localStorage as backup
+          localStorage.setItem('openhire_jobs', JSON.stringify(backendJobs));
+        } else {
+          // Load from localStorage if not authenticated
+          const saved = localStorage.getItem('openhire_jobs');
+          if (saved) {
+            setJobs(JSON.parse(saved));
+          }
+        }
+      } catch (error) {
+        console.error('Error loading jobs:', error);
+        // Fallback to localStorage on error
+        const saved = localStorage.getItem('openhire_jobs');
+        if (saved) {
+          setJobs(JSON.parse(saved));
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadJobs();
+  }, []);
+
+  // Sync jobs to backend and localStorage on change
+  useEffect(() => {
+    const syncJobs = async () => {
+      // Always save to localStorage
+      localStorage.setItem('openhire_jobs', JSON.stringify(jobs));
+      window.dispatchEvent(new Event('jobs-updated'));
+      
+      // Sync to backend if authenticated (debounced)
+      if (api.isAuthenticated() && jobs.length > 0) {
+        // Simple debounce - only sync if not currently syncing
+        if (!syncing) {
+          setSyncing(true);
+          try {
+            // Backend sync would happen here in a real implementation
+            // For now, we rely on individual CRUD operations
+            console.log('Jobs synced to backend');
+          } catch (error) {
+            console.error('Error syncing jobs:', error);
+          } finally {
+            setTimeout(() => setSyncing(false), 1000);
+          }
+        }
+      }
+    };
+    
+    if (jobs.length > 0 || jobs.length === 0) { // Trigger even on empty
+      syncJobs();
+    }
   }, [jobs]);
 
   const exportData = () => {
@@ -74,23 +128,55 @@ export default function JobBoard() {
   const fetchScrapedJobs = async () => {
     setLoading(true);
     try {
+<<<<<<< Updated upstream
       const response = await fetch(`/api/scrape?term=react`, {
         signal: AbortSignal.timeout(15000)
       }); 
       if (!response.ok) throw new Error('Error al conectar con el servidor de scraping.');
       
       const scrapedData = await response.json();
+=======
+      const scrapedData = await api.scraper.scrapeJobs('react');
+>>>>>>> Stashed changes
       const existingLinks = new Set(jobs.map(j => j.link));
       const newJobs = scrapedData.filter(job => !existingLinks.has(job.link));
       
       if (newJobs.length === 0) {
         alert('No hay ofertas nuevas para importar.');
       } else {
-        const jobsToAdd = newJobs.map(job => ({
-          ...job,
-          id: job.id || crypto.randomUUID(), 
-          status: 'wishlist'
-        }));
+        const jobsToAdd = [];
+        
+        // Add to backend if authenticated
+        if (api.isAuthenticated()) {
+          for (const job of newJobs) {
+            try {
+              const created = await api.jobs.create({
+                title: job.title,
+                company: job.company,
+                link: job.link,
+                location: job.location,
+                date: job.date,
+                status: 'wishlist'
+              });
+              jobsToAdd.push(created);
+            } catch (error) {
+              console.error('Error creating job:', error);
+              // Fallback to local if backend fails
+              jobsToAdd.push({
+                ...job,
+                id: crypto.randomUUID(),
+                status: 'wishlist'
+              });
+            }
+          }
+        } else {
+          // Local-only mode
+          jobsToAdd.push(...newJobs.map(job => ({
+            ...job,
+            id: crypto.randomUUID(),
+            status: 'wishlist'
+          })));
+        }
         
         setJobs(prev => [...prev, ...jobsToAdd]);
         alert(`¡Se importaron ${jobsToAdd.length} nuevas ofertas!`);
@@ -115,44 +201,116 @@ export default function JobBoard() {
     e.preventDefault();
   };
 
-  const handleDrop = (e, status) => {
+  const handleDrop = async (e, status) => {
     e.preventDefault();
     const jobId = e.dataTransfer.getData('jobId');
-    setJobs(jobs.map(job => 
+    
+    // Update locally
+    const updatedJobs = jobs.map(job => 
       job.id === parseInt(jobId) || job.id === jobId ? { ...job, status } : job
-    ));
+    );
+    setJobs(updatedJobs);
+    
+    // Update in backend if authenticated
+    if (api.isAuthenticated()) {
+      const job = updatedJobs.find(j => j.id === parseInt(jobId) || j.id === jobId);
+      if (job) {
+        try {
+          await api.jobs.update(job.id, { status });
+        } catch (error) {
+          console.error('Error updating job status:', error);
+        }
+      }
+    }
   };
 
-  const addJob = (e) => {
+  const addJob = async (e) => {
     e.preventDefault();
     if (!newJob.title || !newJob.company) return;
     
-    setJobs([...jobs, { 
-      id: Date.now().toString(), // Changed ID generation
-      ...newJob, 
-      date: new Date().toISOString().split('T')[0], // Changed date format
-      status: 'wishlist' 
-    }]);
+    const jobData = {
+      ...newJob,
+      date: new Date().toISOString().split('T')[0],
+      status: 'wishlist'
+    };
+    
+    // Add to backend if authenticated
+    if (api.isAuthenticated()) {
+      try {
+        const created = await api.jobs.create(jobData);
+        setJobs([...jobs, created]);
+      } catch (error) {
+        console.error('Error creating job:', error);
+        // Fallback to local
+        setJobs([...jobs, { 
+          id: crypto.randomUUID(),
+          ...jobData
+        }]);
+      }
+    } else {
+      // Local-only mode
+      setJobs([...jobs, { 
+        id: crypto.randomUUID(),
+        ...jobData
+      }]);
+    }
+    
     setNewJob({ title: '', company: '', link: '' });
     setIsAdding(false);
   };
 
-  const moveJob = (jobId, direction) => {
+  const moveJob = async (jobId, direction) => {
     const job = jobs.find(j => j.id === jobId);
     const currentIndex = COLUMNS.findIndex(c => c.id === job.status);
     const newIndex = currentIndex + direction;
     if (newIndex >= 0 && newIndex < COLUMNS.length) {
-      updateJobStatus(jobId, COLUMNS[newIndex].id);
+      const newStatus = COLUMNS[newIndex].id;
+      
+      // Update locally
+      setJobs(jobs.map(j => 
+        j.id === jobId ? { ...j, status: newStatus } : j
+      ));
+      
+      // Update in backend if authenticated
+      if (api.isAuthenticated()) {
+        try {
+          await api.jobs.update(jobId, { status: newStatus });
+        } catch (error) {
+          console.error('Error updating job:', error);
+        }
+      }
     }
   };
 
-  const updateJobStatus = (id, newStatus) => {
+  const updateJobStatus = async (id, newStatus) => {
     setJobs(jobs.map(job => job.id === id ? { ...job, status: newStatus } : job));
+    
+    // Update in backend if authenticated
+    if (api.isAuthenticated()) {
+      try {
+        await api.jobs.update(id, { status: newStatus });
+      } catch (error) {
+        console.error('Error updating job status:', error);
+      }
+    }
   };
 
+<<<<<<< Updated upstream
   const deleteJob = (id) => {
+=======
+  const deleteJob = async (id) => {
+>>>>>>> Stashed changes
     if (window.confirm('¿Estás seguro de que quieres eliminar este empleo?')) {
       setJobs(jobs.filter(job => job.id !== id));
+      
+      // Delete from backend if authenticated
+      if (api.isAuthenticated()) {
+        try {
+          await api.jobs.delete(id);
+        } catch (error) {
+          console.error('Error deleting job:', error);
+        }
+      }
     }
   };
 

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Copy, Check, X, Wand2, Loader2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import api from '../utils/api';
 import './Modal.css';
 
 export default function CoverLetterGenerator({ job, isOpen, onClose }) {
@@ -10,13 +11,7 @@ export default function CoverLetterGenerator({ job, isOpen, onClose }) {
   const [copied, setCopied] = useState(false);
 
   const generateLetter = async () => {
-    const apiKey = localStorage.getItem('openhire_groq_key');
     const userBio = localStorage.getItem('openhire_user_bio');
-
-    if (!apiKey) {
-      setError('Por favor, configura tu API Key de Groq en Ajustes primero.');
-      return;
-    }
 
     if (!userBio) {
       setError('Por favor, añade tu perfil profesional en Ajustes para generar mejores cartas.');
@@ -26,25 +21,24 @@ export default function CoverLetterGenerator({ job, isOpen, onClose }) {
     setLoading(true);
     setError('');
     
-    const prompt = `
-      Eres un experto coach de carrera y redactor profesional.
-      Escribe una carta de presentación convincente y personalizada para el siguiente puesto:
-      
-      Puesto: ${job.title}
-      Empresa: ${job.company}
-      
-      Utilizando mi siguiente perfil/experiencia:
-      ${userBio}
-      
-      Instrucciones:
-      - Tono profesional pero entusiasta.
-      - Destaca por qué encajo bien en el rol basado en mi bio.
-      - Sé conciso (máximo 300 palabras).
-      - Incluye placeholders [Como esto] si falta información específica.
-      - La salida debe ser SOLO el cuerpo de la carta en formato Markdown, sin saludos extra del bot.
-    `;
+    const prompt = `Eres un experto coach de carrera y redactor profesional.
+Escribe una carta de presentación convincente y personalizada para el siguiente puesto:
+
+Puesto: ${job.title}
+Empresa: ${job.company}
+
+Utilizando mi siguiente perfil/experiencia:
+${userBio}
+
+Instrucciones:
+- Tono profesional pero entusiasta.
+- Destaca por qué encajo bien en el rol basado en mi bio.
+- Sé conciso (máximo 300 palabras).
+- Incluye placeholders [Como esto] si falta información específica.
+- La salida debe ser SOLO el cuerpo de la carta en formato Markdown, sin saludos extra del bot.`;
 
     try {
+<<<<<<< Updated upstream
       const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -56,14 +50,16 @@ export default function CoverLetterGenerator({ job, isOpen, onClose }) {
           model: 'llama3-70b-8192',
           temperature: 0.7
         })
+=======
+      const response = await api.ai.chat({
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.7
+>>>>>>> Stashed changes
       });
-
-      if (!response.ok) throw new Error('Error al conectar con Groq API');
       
-      const data = await response.json();
-      setGeneratedLetter(data.choices[0]?.message?.content || 'No se pudo generar la carta.');
+      setGeneratedLetter(response.message || 'No se pudo generar la carta.');
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'Error al generar la carta.');
     } finally {
       setLoading(false);
     }

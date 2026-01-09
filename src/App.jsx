@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 import { useState, useEffect } from 'react';
 import {
   FileText,
@@ -34,17 +35,144 @@ function AppContent() {
     return saved ? JSON.parse(saved) : [];
   });
 
+=======
+import { useState, useEffect } from 'react'
+import { FileText, Bot, Layout, Home, ExternalLink, Terminal, ArrowRight, BarChart3, ScanFace, MessageSquare, HelpCircle, X, LogOut, User } from 'lucide-react'
+import JobBoard from './components/JobBoard'
+import Analytics from './components/Analytics'
+import CVOptimizer from './components/CVOptimizer'
+import InterviewSimulator from './components/InterviewSimulator'
+import JobAutomation from './components/JobAutomation'
+import Auth from './components/Auth'
+import api from './utils/api'
+import './App.css'
+import './components/JobBoard.css'
+import './components/Analytics.css'
+import './components/CVOptimizer.css'
+import './components/InterviewSimulator.css'
+
+function App() {
+  const [currentView, setCurrentView] = useState('home')
+  const [showGuide, setShowGuide] = useState(false)
+  const [showAuth, setShowAuth] = useState(false)
+  const [user, setUser] = useState(null)
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true)
+  
+  // Load jobs here to pass to Analytics and Simulator
+  const [jobs, setJobs] = useState([]);
+  
+  // Check authentication on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      if (api.isAuthenticated()) {
+        try {
+          const userData = await api.auth.getMe()
+          setUser(userData)
+          // Load jobs from backend
+          const jobsData = await api.jobs.getAll()
+          setJobs(jobsData)
+        } catch (error) {
+          console.error('Auth check failed:', error)
+          // Fallback to localStorage
+          const cachedJobs = localStorage.getItem('openhire_jobs')
+          if (cachedJobs) {
+            setJobs(JSON.parse(cachedJobs))
+          }
+        }
+      } else {
+        // Load from localStorage if not authenticated
+        const cachedJobs = localStorage.getItem('openhire_jobs')
+        if (cachedJobs) {
+          setJobs(JSON.parse(cachedJobs))
+        }
+      }
+      setIsLoadingAuth(false)
+    }
+    
+    checkAuth()
+    
+    // Listen for auth events
+    const handleAuthExpired = () => {
+      setUser(null)
+      setShowAuth(true)
+    }
+    
+    const handleAuthLogout = () => {
+      setUser(null)
+      setJobs([])
+      setCurrentView('home')
+    }
+    
+    window.addEventListener('auth-expired', handleAuthExpired)
+    window.addEventListener('auth-logout', handleAuthLogout)
+    
+    return () => {
+      window.removeEventListener('auth-expired', handleAuthExpired)
+      window.removeEventListener('auth-logout', handleAuthLogout)
+    }
+  }, [])
+  
+>>>>>>> Stashed changes
   // Listen for storage updates to keep Analytics in sync if JobBoard updates jobs
   useEffect(() => {
     const handleStorageChange = () => {
       const saved = localStorage.getItem('openhire_jobs');
       if (saved) setJobs(JSON.parse(saved));
     };
+<<<<<<< Updated upstream
 
+=======
+    
+    const handleJobsUpdated = async () => {
+      // Reload from backend if authenticated
+      if (api.isAuthenticated()) {
+        try {
+          const jobsData = await api.jobs.getAll()
+          setJobs(jobsData)
+        } catch (error) {
+          console.error('Error reloading jobs:', error)
+          handleStorageChange()
+        }
+      } else {
+        handleStorageChange()
+      }
+    };
+    
+>>>>>>> Stashed changes
     // Custom event listener for local updates within same window
-    window.addEventListener('jobs-updated', handleStorageChange);
-    return () => window.removeEventListener('jobs-updated', handleStorageChange);
+    window.addEventListener('jobs-updated', handleJobsUpdated);
+    return () => window.removeEventListener('jobs-updated', handleJobsUpdated);
   }, []);
+  
+  const handleAuthSuccess = async (userData) => {
+    setUser(userData)
+    setShowAuth(false)
+    
+    // Load jobs after login
+    try {
+      const jobsData = await api.jobs.getAll()
+      setJobs(jobsData)
+      
+      // Optionally migrate localStorage jobs to backend
+      const cachedJobs = localStorage.getItem('openhire_jobs')
+      if (cachedJobs) {
+        const localJobs = JSON.parse(cachedJobs)
+        // If user has local jobs but no backend jobs, offer migration
+        if (localJobs.length > 0 && jobsData.length === 0) {
+          // Could show a migration prompt here
+          console.log('Found local jobs, consider migrating to backend')
+        }
+      }
+    } catch (error) {
+      console.error('Error loading jobs:', error)
+    }
+  }
+  
+  const handleLogout = () => {
+    if (confirm('¿Seguro que quieres cerrar sesión?')) {
+      api.auth.logout()
+    }
+  }
 
   const tools = [
     {
@@ -125,11 +253,20 @@ function AppContent() {
         return (
           <>
             <header className="hero">
+<<<<<<< Updated upstream
               <div className="tag" style={{ marginBottom: '1rem' }}>
                 Nidius Suite
               </div>
               <h1>{t('hero_title')}</h1>
               <p>{t('hero_subtitle')}</p>
+=======
+              <div className="tag" style={{ marginBottom: '1rem' }}>Nidus Suite</div>
+              <h1>Consigue Trabajo.<br/>Sin Pagar de Más.</h1>
+              <p>
+                Reemplaza los SaaS de pago por herramientas Open Source. 
+                Optimiza tu perfil, usa IA avanzada y automatiza tu búsqueda.
+              </p>
+>>>>>>> Stashed changes
             </header>
 
             <div className="tools-grid">
@@ -198,8 +335,20 @@ function AppContent() {
     }
   };
 
+  if (isLoadingAuth) {
+    return (
+      <div className="app-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div className="spinner" style={{ margin: '0 auto 1rem' }}></div>
+          <p>Cargando...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="app-container">
+<<<<<<< Updated upstream
       <nav
         className="main-nav"
         style={{
@@ -212,6 +361,18 @@ function AppContent() {
         }}
       >
         <button
+=======
+      <nav className="main-nav" style={{ 
+        display: 'flex', 
+        gap: '2rem', 
+        justifyContent: 'center', 
+        padding: '1rem',
+        borderBottom: '1px solid rgba(255,255,255,0.05)',
+        marginBottom: '2rem',
+        position: 'relative'
+      }}>
+        <button 
+>>>>>>> Stashed changes
           className={`nav-item ${currentView === 'home' ? 'active' : ''}`}
           onClick={() => setCurrentView('home')}
           style={{
@@ -296,11 +457,59 @@ function AppContent() {
         >
           <BarChart3 size={18} /> {t('analytics')}
         </button>
+        
+        {/* Auth button - positioned absolutely at the right */}
+        <div style={{ position: 'absolute', right: '1rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          {user ? (
+            <>
+              <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                <User size={14} style={{ verticalAlign: 'middle', marginRight: '0.25rem' }} />
+                {user.email}
+              </span>
+              <button 
+                onClick={handleLogout}
+                style={{ 
+                  background: 'rgba(255,255,255,0.05)', 
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  color: 'var(--text-secondary)',
+                  padding: '0.5rem 1rem',
+                  fontSize: '0.9rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}
+              >
+                <LogOut size={14} /> Salir
+              </button>
+            </>
+          ) : (
+            <button 
+              onClick={() => setShowAuth(true)}
+              className="btn-primary"
+              style={{ 
+                padding: '0.5rem 1rem',
+                fontSize: '0.9rem'
+              }}
+            >
+              <User size={14} style={{ marginRight: '0.25rem' }} /> Ingresar
+            </button>
+          )}
+        </div>
       </nav>
 
       <ThemeToggle />
 
       {renderView()}
+      
+      {/* Auth Modal */}
+      {showAuth && (
+        <Auth 
+          onClose={() => setShowAuth(false)}
+          onAuthSuccess={handleAuthSuccess}
+        />
+      )}
     </div>
   );
 }

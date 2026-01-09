@@ -2,3 +2,18 @@ fastapi
 uvicorn
 requests
 python-multipart
+<<<<<<< Updated upstream
+=======
+sqlalchemy
+pydantic
+playwright==1.40.0
+beautifulsoup4
+tenacity
+bcrypt
+python-jose[cryptography]
+passlib[bcrypt]
+python-dotenv
+pytest
+pytest-asyncio
+httpx
+>>>>>>> Stashed changes

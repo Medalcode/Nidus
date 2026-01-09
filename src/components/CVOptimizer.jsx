@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { FileText, ArrowRight, CheckCircle, AlertTriangle, Sparkles, Loader2, Copy, UploadCloud, FileType } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import * as pdfjsLib from 'pdfjs-dist';
+import api from '../utils/api';
 import './CVOptimizer.css';
 
 // Set worker source
@@ -50,11 +51,6 @@ export default function CVOptimizer() {
   };
 
   const analyzeCV = async () => {
-    const apiKey = localStorage.getItem('openhire_groq_key');
-    if (!apiKey) {
-      setError('Por favor, configura tu API Key en la sección de Tablero > Configuración.');
-      return;
-    }
     if (!resumeText.trim()) {
       setError('Por favor, pega el contenido de tu CV.');
       return;
@@ -64,30 +60,8 @@ export default function CVOptimizer() {
     setError('');
     setResult(null);
 
-    const prompt = `
-      Actúa como un reclutador experto de Google y Coach de Carrera.
-      Analiza el siguiente CV y optimízalo.
-      
-      ${jobDescription ? `ADAPTALO PARA ESTA OFERTA: \n"${jobDescription}"\n` : ''}
-
-      AQUÍ ESTÁ EL CV ACTUAL:
-      "${resumeText}"
-
-      Tu tarea es devolver un análisis en formato JSON estricto con esta estructura:
-      {
-        "score": (número 0-100 basado en impacto y claridad),
-        "feedback": ["punto de mejora 1", "punto 2", "punto 3"],
-        "optimizedChecklist": ["cambio realizado 1", "cambio realizado 2"],
-        "rewrittenCV": "El texto completo del CV mejorado, usando verbos de acción fuertes, métricas cuantificables y formato Markdown limpio."
-      }
-
-      Importante:
-      - Usa el método HAR (Hard, Action, Result) o STAR.
-      - Elimina clichés (ej. "trabajador en equipo").
-      - Asegúrate de que el JSON sea válido. No incluyas nada fuera del JSON.
-    `;
-
     try {
+<<<<<<< Updated upstream
       const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -122,6 +96,17 @@ export default function CVOptimizer() {
       } else {
         setError(`Error al analizar: ${err.message}. Verifica tu API Key y conexión.`);
       }
+=======
+      const response = await api.ai.analyzeCV({
+        cv_text: resumeText,
+        job_description: jobDescription || undefined
+      });
+      
+      setResult(response);
+    } catch (err) {
+      console.error('Analysis Error:', err);
+      setError(`Error: ${err.message}. ${!api.isAuthenticated() ? 'Inicia sesión para usar el analizador de CV.' : 'Intenta de nuevo.'}`);
+>>>>>>> Stashed changes
     } finally {
       setIsAnalyzing(false);
     }
