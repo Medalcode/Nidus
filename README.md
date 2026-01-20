@@ -1,58 +1,94 @@
-# ATS Visual - Pruebas de CV
+# Nidus ATS - AI-Powered Recruitment Tool 🚀
 
-Este proyecto es un sistema ATS (Applicant Tracking System) minimalista para subir, analizar y obtener recomendaciones sobre CVs. Permite subir archivos PDF, DOCX y TXT, analizar keywords, formato y estructura, mostrar recomendaciones visuales y exportar el análisis en PDF personalizado. Incluye soporte multi-idioma y una interfaz moderna con drag & drop.
+Nidus is a modern **Applicant Tracking System (ATS)** designed to streamline the recruitment process using Artificial Intelligence. It analyzes CVs, ranks candidates against job descriptions, and provides actionable insights.
 
-## Estructura
-- **backend/**: API FastAPI para subir, analizar y exportar CVs (almacenamiento en memoria).
-- **frontend/**: React app con UI visual, drag & drop, feedback y exportación PDF.
+![Status](https://img.shields.io/badge/Status-Active-success)
+![Python](https://img.shields.io/badge/Backend-FastAPI-blue)
+![React](https://img.shields.io/badge/Frontend-React%20%2B%20Tailwind-cyan)
+![AI](https://img.shields.io/badge/AI-Llama%203%20%28Groq%29-purple)
 
-## Uso
-1. Ejecuta el backend (FastAPI).
-2. Ejecuta el frontend (React).
-3. Sube tu CV, revisa el análisis y exporta el resultado en PDF.
+## ✨ Key Features
 
-## Características
-- Subida de CV por drag & drop
-- Análisis de keywords, formato y estructura
-- Recomendaciones para mejorar el CV
-- Exportación de análisis en PDF personalizado (logo, colores)
-- Soporte multi-idioma (español, inglés)
-- Sin autenticación, datos solo en memoria
+- **📄 Smart CV Parsing**:
+  - Automatically extracts candidate details (Name, Skills, Experience) using **Llama 3 AI** (via Groq).
+  - Fallback to advanced Regex matching if AI is unavailable.
+  - Supports PDF, DOCX, and TXT formats.
 
----
+- **📊 Mathematical Ranking**:
+  - Calculates a **Match Score** (%) between the CV and Job Description using **TF-IDF Vectorization** and **Cosine Similarity**.
+  - Identifies **Missing Keywords** crucial for the specific vacancy.
 
+- **🗂️ Candidate Dashboard**:
+  - Centralized view of all processed applications.
+  - Sort candidates by Match Score.
+  - Download detailed PDF reports.
+  - **Data Persistence**: All data is securely stored in a local SQLite database.
 
-## Mejoras implementadas (2026)
-- Feedback visual y manejo de errores en frontend
-- Validación de tipo y tamaño de archivo en frontend y backend
-- Loader/spinner durante análisis
-- Extracción real de texto de PDF/DOCX/TXT en backend
-- Análisis de keywords y secciones reales
-- Logging y manejo robusto de errores en backend
-- Dockerfile multi-stage listo para Cloud Run
+- **⚙️ Dynamic Configuration**:
+  - Input your own API Keys directly from the UI settings.
+  - Seamless toggle between AI and standard scanning modes.
 
-## Despliegue en Google Cloud Run
-1. Construye la imagen Docker:
-	```
-	docker build -t gcr.io/PROYECTO_ID/ats-visual .
-	```
-2. Sube la imagen a Google Container Registry:
-	```
-	docker push gcr.io/PROYECTO_ID/ats-visual
-	```
-3. Despliega en Cloud Run:
-	```
-	gcloud run deploy ats-visual --image gcr.io/PROYECTO_ID/ats-visual --platform managed --region us-central1 --allow-unauthenticated --port 8080
-	```
+## 🛠️ Tech Stack
 
-## Cómo contribuir
+### Backend
 
-## Cómo contribuir
-1. Clona el repositorio y navega a la carpeta del proyecto.
-2. Instala dependencias en `backend/` y `frontend/`.
-3. Ejecuta ambos servidores en paralelo.
-4. Si encuentras errores, revisa la estructura de carpetas y rutas.
+- **Framework**: FastAPI (Python 3.13)
+- **Database**: SQLite + SQLAlchemy
+- **AI/ML**: `scikit-learn` (Ranking), `groq` (LLM Integration)
+- **Testing**: `pytest`
 
----
----
-Desarrollado para pruebas rápidas, visualización de resultados y despliegue cloud.
+### Frontend
+
+- **Framework**: React.js (Vite/Webpack)
+- **Styling**: Tailwind CSS v4
+- **Icons**: React Icons
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Python 3.10+
+- Node.js 18+
+
+### 1. Backend Setup
+
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
+
+# Run the server
+uvicorn app.main:app --reload
+```
+
+The API will be available at `http://localhost:8000`.
+
+### 2. Frontend Setup
+
+```bash
+cd frontend
+npm install
+
+# Run the development server
+npm start
+```
+
+The application will open at `http://localhost:3000`.
+
+## 🧪 Testing
+
+We use **pytest** for backend integration testing.
+
+```bash
+cd backend
+pytest tests/
+```
+
+## 📦 CI/CD
+
+This repository includes a **GitHub Actions** workflow (`.github/workflows/ci.yml`) that automatically runs the test suite on every push and pull request to the `main` branch.
+
+## 📝 License
+
+This project is licensed under the MIT License.
