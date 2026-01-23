@@ -47,10 +47,12 @@ Nidus is a modern **Applicant Tracking System (ATS)** designed to streamline the
 
 ## 🚀 Getting Started
 
+
 ### Prerequisites
 
 - Python 3.10+
-- Node.js 18+
+- (Opcional para frontend) Node.js 18+
+
 
 ### 1. Backend Setup
 
@@ -64,28 +66,37 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
 
-The API will be available at `http://localhost:8000`.
+La API estará disponible en `http://localhost:8000`.
+
 
 ### 2. Frontend Setup
 
 ```bash
 cd frontend
+# Requiere Node.js/npm solo para desarrollo/build
 npm install
 
-# Run the development server
+# Ejecutar servidor de desarrollo
 npm start
 ```
 
-The application will open at `http://localhost:3000`.
+La aplicación abrirá en `http://localhost:3000`.
 
 ## 🧪 Testing
 
-We use **pytest** for backend integration testing.
+
+### Backend
+Usamos **pytest** para testing de integración del backend:
 
 ```bash
 cd backend
 pytest tests/
 ```
+
+Todos los tests backend deben pasar tras clonar y configurar el entorno.
+
+### Frontend
+Actualmente **no hay tests automáticos configurados** para el frontend. Si deseas agregar tests, instala Node.js/npm y configura Jest o React Testing Library.
 
 ## 📦 CI/CD
 
