@@ -19,7 +19,7 @@ module.exports = {
     port: 3000,
     proxy: [
       {
-        context: ['/upload-cv', '/export-pdf'],
+        context: ['/upload-cv', '/export-pdf', '/auth', '/cvs', '/tasks'],
         target: 'http://localhost:8000',
         changeOrigin: true
       }

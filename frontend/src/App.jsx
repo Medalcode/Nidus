@@ -3,15 +3,19 @@ import { saveAs } from "file-saver";
 import { FaCheckCircle, FaExclamationCircle } from "react-icons/fa";
 import i18n from "./i18n";
 
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import Layout from "./components/Layout";
 import Dropzone from "./components/Dropzone";
 import AnalysisPanel from "./components/AnalysisPanel";
 import SettingsModal from "./components/SettingsModal";
 import Dashboard from "./components/Dashboard";
+import Login from "./components/Login";
+import Register from "./components/Register";
 
 const LANGUAGES = { es: "Español", en: "English" };
 
-function App() {
+function AppContent() {
+  const { user, loading: authLoading, isAuthenticated, logout } = useAuth();
   const [cv, setCV] = useState(null);
   const [analysis, setAnalysis] = useState(null);
   const [lang, setLang] = useState("es");
@@ -22,6 +26,7 @@ function App() {
   
   // Navigation State
   const [view, setView] = useState('home'); // 'home' | 'dashboard'
+  const [authView, setAuthView] = useState('login'); // 'login' | 'register'
   
   // Settings State
   const [showSettings, setShowSettings] = useState(false);
@@ -60,20 +65,69 @@ function App() {
         headers['x-groq-api-key'] = apiKey;
       }
       
+      // Add auth token
+      const token = localStorage.getItem('access_token');
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
       const res = await fetch("/upload-cv", { 
         method: "POST", 
         body: formData,
         headers: headers
       });
-      if (!res.ok) throw new Error("Error al analizar el CV");
-      const data = await res.json();
-      setAnalysis(data);
-      setSuccess("¡Análisis completado!");
+      
+      if (res.status === 401) {
+        setError("Sesión expirada. Por favor inicia sesión nuevamente.");
+        logout();
+        return;
+      }
+      
+      if (!res.ok) throw new Error("Error al iniciar el análisis");
+      
+      const { task_id } = await res.json();
+      
+      // Poll for result
+      const pollInterval = setInterval(async () => {
+        try {
+          const taskRes = await fetch(`/tasks/${task_id}`, {
+             headers: {
+                'Authorization': `Bearer ${token}`
+             }
+          });
+          const taskData = await taskRes.json();
+          
+          if (taskData.status === 'SUCCESS' || taskData.status === 'completed') {
+             clearInterval(pollInterval);
+             setAnalysis(taskData.result);
+             setSuccess("¡Análisis completado!");
+             setLoading(false);
+          } else if (taskData.status === 'FAILURE' || taskData.status === 'failed') {
+             clearInterval(pollInterval);
+             setError("Error en el análisis: " + (taskData.error || "Desconocido"));
+             setLoading(false);
+          }
+          // If pending/processing, continue polling
+        } catch (e) {
+           clearInterval(pollInterval);
+           setError("Error al consultar estado del análisis");
+           setLoading(false);
+        }
+      }, 2000);
+      
+      // Optional: Timeout checking after 1 min
+      setTimeout(() => {
+          clearInterval(pollInterval);
+          if (loading) { // if still loading
+             setError("Tiempo de espera agotado.");
+             setLoading(false);
+          }
+      }, 60000);
+
     } catch (e) {
-      setError("No se pudo analizar el CV. Intenta de nuevo.");
-    } finally {
+      setError("No se pudo iniciar el análisis. Intenta de nuevo.");
       setLoading(false);
-    }
+    } 
   };
 
   const exportPDF = async () => {
@@ -101,6 +155,27 @@ function App() {
     }
   };
 
+  
+  // Show loading while checking auth
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-center">
+          <div className="loader mb-4"></div>
+          <p className="text-slate-600">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show login/register if not authenticated
+  if (!isAuthenticated) {
+    if (authView === 'register') {
+      return <Register onSwitchToLogin={() => setAuthView('login')} />;
+    }
+    return <Login onSwitchToRegister={() => setAuthView('register')} />;
+  }
+
   return (
     <Layout 
       lang={lang} 
@@ -109,6 +184,8 @@ function App() {
       onOpenSettings={() => setShowSettings(true)}
       currentView={view}
       onNavigate={setView}
+      user={user}
+      onLogout={logout}
     >
       {view === 'dashboard' ? (
         <Dashboard onBack={() => setView('home')} />
@@ -174,4 +251,15 @@ function App() {
   );
 }
 
-export default App;
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from './lib/queryClient';
+
+export default function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+}

@@ -1,7 +1,7 @@
 import React from 'react';
-import { FaFeatherAlt, FaCog } from 'react-icons/fa';
+import { FaFeatherAlt, FaCog, FaSignOutAlt, FaUserCircle } from 'react-icons/fa';
 
-export default function Layout({ children, lang, setLang, languages, onOpenSettings, currentView, onNavigate }) {
+export default function Layout({ children, lang, setLang, languages, onOpenSettings, currentView, onNavigate, user, onLogout }) {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-indigo-100 selection:text-indigo-700">
       <header className="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-200">
@@ -27,6 +27,13 @@ export default function Layout({ children, lang, setLang, languages, onOpenSetti
           </nav>
 
           <div className="flex items-center gap-4">
+            {user && (
+              <div className="flex items-center gap-2 text-sm text-slate-600">
+                <FaUserCircle className="text-lg" />
+                <span className="hidden sm:inline">{user.username}</span>
+              </div>
+            )}
+            
             <button 
                 onClick={onOpenSettings}
                 className="text-slate-400 hover:text-slate-600 transition-colors p-2 rounded-full hover:bg-slate-100"
@@ -34,6 +41,7 @@ export default function Layout({ children, lang, setLang, languages, onOpenSetti
             >
                 <FaCog className="text-lg" />
             </button>
+            
             <select 
               value={lang} 
               onChange={e => setLang(e.target.value)}
@@ -43,6 +51,16 @@ export default function Layout({ children, lang, setLang, languages, onOpenSetti
                 <option key={k} value={k}>{v}</option>
               ))}
             </select>
+            
+            {onLogout && (
+              <button 
+                  onClick={onLogout}
+                  className="text-slate-400 hover:text-red-600 transition-colors p-2 rounded-full hover:bg-red-50"
+                  title="Cerrar Sesión"
+              >
+                  <FaSignOutAlt className="text-lg" />
+              </button>
+            )}
           </div>
         </div>
       </header>

@@ -33,13 +33,15 @@ Nidus is a modern **Applicant Tracking System (ATS)** designed to streamline the
 ### Backend
 
 - **Framework**: FastAPI (Python 3.13)
-- **Database**: SQLite + SQLAlchemy
+- **Database**: PostgreSQL (Production) / SQLite (Dev) + SQLAlchemy
+- **Async Processing**: Celery + Redis
 - **AI/ML**: `scikit-learn` (Ranking), `groq` (LLM Integration)
 - **Testing**: `pytest`
 
 ### Frontend
 
 - **Framework**: React.js (Vite/Webpack)
+- **State Management**: React Query + Context API
 - **Styling**: Tailwind CSS v4
 - **Icons**: React Icons
 
