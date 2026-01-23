@@ -13,7 +13,8 @@ router = APIRouter()
 
 from app.repositories.candidate import candidate_repo
 
-@router.get("/cvs")
+from typing import Any
+@router.get("/cvs", response_model=List[Any])
 def list_cvs(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)

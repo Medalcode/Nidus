@@ -3,9 +3,11 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
+import time
 
 from app.main import app
 from app.core.database import Base, get_db
+from app.core.config import settings
 
 # Setup in-memory SQLite for testing
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
@@ -35,33 +37,61 @@ def setup_db():
     yield
     Base.metadata.drop_all(bind=engine)
 
-def test_list_cvs_empty(setup_db):
-    response = client.get("/cvs")
-    assert response.status_code == 200
-    assert response.json() == []
+@pytest.fixture(scope="module")
+def auth_header(setup_db):
+    from app.core.security import get_password_hash, create_access_token
+    from app.models.user import User
+    db = TestingSessionLocal()
+    user = User(
+        email="test@example.com",
+        username="testuser",
+        hashed_password=get_password_hash("password123"),
+        full_name="Test User",
+        is_active=True,
+        is_verified=True,
+        role="recruiter"
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    token = create_access_token({"sub": str(user.id)})
+    db.close()
+    return {"Authorization": f"Bearer {token}"}
 
-def test_upload_cv_txt(setup_db):
-    # Simulate a TXT file upload
-    file_content = b"Candidate Name: John Doe\nSkills: Python, React, SQL"
-    files = {"file": ("test_cv.txt", file_content, "text/plain")}
-    
-    response = client.post("/upload-cv", files=files)
-    
+def test_get_me(auth_header):
+    response = client.get("/auth/me", headers=auth_header)
+    if response.status_code != 200:
+        print("/auth/me response:", response.status_code, response.text)
     assert response.status_code == 200
     data = response.json()
-    assert data["filename"] == "test_cv.txt"
-    assert "Python" in data["keywords"]
-    assert "match_score" in data
+    assert data["email"] == "test@example.com"
 
-def test_list_cvs_after_upload(setup_db):
-    # Should have 1 CV from previous test (if sequential) 
-    # dependent tests are bad practice, but for simple script valid enough
-    # Actually pytest runs independent unless session scoped. 
-    # Let's re-upload to be safe or rely on module scope of DB fixture?
-    # Used module scope for setup_db, so data persists for this module.
+def test_list_cvs_empty(auth_header):
+    response = client.get("/cvs", headers=auth_header)
+    if response.status_code != 200:
+        print("/cvs response:", response.status_code, response.text)
+    assert response.status_code == 200
+    try:
+        data = response.json()
+    except Exception:
+        print("/cvs non-JSON response:", response.text)
+        raise
+    assert data == []
+
+def test_upload_cv_txt_async(auth_header):
+    file_content = b"Candidate Name: Async Candidate\nSkills: Celery, Redis, Testing"
+    files = {"file": ("async_cv.txt", file_content, "text/plain")}
     
-    response = client.get("/cvs")
+    response = client.post("/upload-cv", files=files, headers=auth_header)
+    if response.status_code != 200:
+        print("/upload-cv response:", response.status_code, response.text)
     assert response.status_code == 200
     data = response.json()
-    assert len(data) >= 1
-    assert data[0]["filename"] == "test_cv.txt"
+    assert "task_id" in data
+    task_id = data["task_id"]
+    response = client.get(f"/tasks/{task_id}", headers=auth_header)
+    if response.status_code != 200:
+        print(f"/tasks/{{task_id}} response:", response.status_code, response.text)
+    assert response.status_code == 200
+    assert response.json()["task_id"] == task_id
+

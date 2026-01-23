@@ -59,7 +59,7 @@ if os.path.exists(frontend_dist):
         # Si la ruta no es de API ni archivo estático, servir index.html
         # Check against API routes?
         # A simple heuristic: if it doesn't start with recognized api paths (defined in router)
-        if full_path.startswith("upload-cv") or full_path.startswith("cvs") or full_path.startswith("export-pdf"):
+        if full_path.startswith("upload-cv") or full_path.startswith("cvs") or full_path.startswith("export-pdf") or full_path.startswith("auth") or full_path.startswith("tasks"):
              # This should have been caught by the router if method matches? 
              # But this catch-all might shadow them if defined before? 
              # No, specific routes take precedence usually.
